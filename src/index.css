@@ -1,19 +1,19 @@
 :root {
-  --bg: #070705;
-  --bg-2: #0e0c09;
-  --surface: #14110c;
-  --surface-2: #1c1812;
-  --line: #2a2418;
-  --line-hot: #5c4a22;
-  --gold: #e0b84a;
-  --gold-2: #c4922a;
-  --gold-dim: #8a6b24;
-  --cream: #f3ead8;
-  --muted: #9a8f7a;
+  --bg: #080506;
+  --bg-2: #10080c;
+  --surface: #160e12;
+  --surface-2: #1e1418;
+  --line: #2e1a22;
+  --line-hot: #6a2a40;
+  --gold: #ff4d6d;
+  --gold-2: #d42a52;
+  --gold-dim: #8a2440;
+  --cream: #f8e4ea;
+  --muted: #9a7a84;
   --open: #b8ff3d;
   --open-dim: #5a8a12;
-  --dance: #ff4d6d;
-  --dance-dim: #7a2034;
+  --dance: #e0b84a;
+  --dance-dim: #7a5a20;
   --avail: #3ee0a0;
   --break: #7d8794;
   --danger: #ff5a4d;
@@ -49,7 +49,7 @@ body {
   color: var(--cream);
   font-family: var(--font-ui);
   background:
-    radial-gradient(1200px 500px at 10% -10%, rgba(224, 184, 74, 0.07), transparent 50%),
+    radial-gradient(1200px 500px at 10% -10%, rgba(255, 77, 109, 0.09), transparent 50%),
     radial-gradient(800px 400px at 110% 10%, rgba(255, 77, 109, 0.05), transparent 45%),
     var(--bg);
   -webkit-font-smoothing: antialiased;
@@ -124,7 +124,7 @@ ol {
   color: var(--gold);
   font-size: 22px;
   line-height: 1;
-  text-shadow: 0 0 16px rgba(224, 184, 74, 0.55);
+  text-shadow: 0 0 16px rgba(255, 77, 109, 0.55);
 }
 
 .brand-name {
@@ -162,7 +162,7 @@ ol {
   border: 1px solid var(--gold-dim);
   padding: 6px 10px;
   border-radius: 999px;
-  background: rgba(224, 184, 74, 0.08);
+  background: rgba(255, 77, 109, 0.08);
 }
 
 .topbar-right {
@@ -350,7 +350,7 @@ ol {
 
 .stage-card.is-live {
   border-color: color-mix(in srgb, var(--gold) 50%, var(--line));
-  box-shadow: inset 0 0 48px rgba(224, 184, 74, 0.08);
+  box-shadow: inset 0 0 48px rgba(255, 77, 109, 0.08);
 }
 
 .stage-card-head {
@@ -470,7 +470,7 @@ ol {
 
 .queue-list li.is-first {
   border-color: var(--gold-dim);
-  background: rgba(224, 184, 74, 0.08);
+  background: rgba(255, 77, 109, 0.08);
 }
 
 .q-pos {
@@ -679,10 +679,10 @@ ol {
 }
 
 .btn-gold {
-  background: linear-gradient(180deg, #e8c45a, #b8862a);
-  color: #1a1204;
-  border-color: #f0d78a;
-  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.25);
+  background: linear-gradient(180deg, #ff6a88, #c42a52);
+  color: #1a040a;
+  border-color: #ffb0c0;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.18);
 }
 
 .btn-ghost {
@@ -696,9 +696,9 @@ ol {
 }
 
 .btn-dance {
-  background: #3a121c;
+  background: #3a2e12;
   border-color: var(--dance);
-  color: #ffc1cc;
+  color: #f0e0b0;
 }
 
 .btn-row {
@@ -812,7 +812,7 @@ ol {
 
 .pick-row--accent {
   border-color: var(--gold-dim);
-  background: rgba(224, 184, 74, 0.1);
+  background: rgba(255, 77, 109, 0.1);
   margin-bottom: 10px;
 }
 
