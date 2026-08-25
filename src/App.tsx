@@ -30,7 +30,7 @@ export default function App() {
         ) : (
           <>
             <Queue readOnly={manager} />
-            <Floor restricted={manager} />
+            <Floor restricted={manager} onAdd={() => setClockInOpen(true)} />
           </>
         )}
       </main>

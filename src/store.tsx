@@ -109,7 +109,7 @@ function clockInOne(state: AppState, id: EntertainerId): AppState {
   if (isClockedIn(state, id)) return state
   const person = state.entertainers.find((e) => e.id === id)
   if (!person || person.archived) return state
-  return {
+  const next: AppState = {
     ...state,
     clockedIn: [...state.clockedIn, id],
     statuses: {
@@ -118,6 +118,7 @@ function clockInOne(state: AppState, id: EntertainerId): AppState {
     },
     nightStartedAt: state.nightStartedAt ?? now(),
   }
+  return enqueueBottom(next, id)
 }
 
 function makeAvailable(state: AppState, id: EntertainerId): AppState {

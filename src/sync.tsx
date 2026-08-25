@@ -23,6 +23,7 @@ type Wire =
 const MANAGER_ACTIONS = new Set<Action['type']>([
   'clock-in',
   'clock-in-many',
+  'clock-out',
   'add-house',
   'add-guest',
   'start-dance',

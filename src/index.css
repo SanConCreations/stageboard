@@ -275,6 +275,12 @@ ol {
   font-variant-numeric: tabular-nums;
 }
 
+.zone-head-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .zone-empty {
   color: var(--muted);
   font-size: 15px;

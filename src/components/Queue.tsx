@@ -25,7 +25,7 @@ export function Queue({ readOnly }: { readOnly?: boolean }) {
 
       {people.length === 0 ? (
         <p className="zone-empty">
-          Rotation is empty. Add available talent — next girl always walks on Stage 3.
+          Rotation is empty. Clock someone in (they land here) or add from Available.
         </p>
       ) : (
         <ol className="queue-list">

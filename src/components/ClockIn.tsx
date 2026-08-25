@@ -16,8 +16,8 @@ export function ClockInSheet({ onClose, restricted }: { onClose: () => void; res
     <>
       <Modal title="Tonight's roster" onClose={onClose} wide>
         <p className="sheet-lead">
-          Clock in who is working. Guests are tonight-only. Sample names are
-          demo data — not real staff.
+          Clock in anytime. She lands at the bottom of Who&apos;s Next.
+          Clock out when she leaves. Guests are tonight-only.
         </p>
 
         {house.length === 0 && onFloor.length === 0 && (
@@ -58,14 +58,12 @@ export function ClockInSheet({ onClose, restricted }: { onClose: () => void; res
                       {e.guest && <em className="guest-tag">guest</em>}
                       {e.sample && <em className="sample-tag">sample</em>}
                     </span>
-                    {!restricted && (
                     <button
                       className="btn btn-ghost btn-sm"
                       onClick={() => dispatch({ type: 'clock-out', id: e.id })}
                     >
                       Clock out
                     </button>
-                    )}
                   </div>
                 </li>
               ))}

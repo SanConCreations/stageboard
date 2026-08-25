@@ -3,7 +3,13 @@ import { formatElapsed } from '../time'
 import { useNow } from '../hooks/useNow'
 import type { Entertainer, EntertainerStatus } from '../types'
 
-export function Floor({ restricted }: { restricted?: boolean }) {
+export function Floor({
+  restricted,
+  onAdd,
+}: {
+  restricted?: boolean
+  onAdd?: () => void
+}) {
   const { clockedIn, entertainers, statuses, stages, occupancy, queue } = useBoard()
   const people = clockedIn
     .map((id) => entertainers.find((e) => e.id === id))
@@ -20,7 +26,14 @@ export function Floor({ restricted }: { restricted?: boolean }) {
     <section className="zone zone-floor">
       <header className="zone-head">
         <h1>Floor</h1>
-        <span className="zone-count">{people.length}</span>
+        <div className="zone-head-right">
+          <span className="zone-count">{people.length}</span>
+          {onAdd && (
+            <button className="btn btn-sm btn-gold" onClick={onAdd}>
+              + Add
+            </button>
+          )}
+        </div>
       </header>
 
       <FloorGroup
@@ -166,6 +179,12 @@ function FloorRow({
             >
               Break
             </button>
+            <button
+              className="btn btn-sm btn-ghost"
+              onClick={() => dispatch({ type: 'clock-out', id: person.id })}
+            >
+              Out
+            </button>
           </>
         )}
         {kind === 'dance' && (
@@ -189,6 +208,12 @@ function FloorRow({
               onClick={() => dispatch({ type: 'start-dance', id: person.id })}
             >
               Dance
+            </button>
+            <button
+              className="btn btn-sm btn-ghost"
+              onClick={() => dispatch({ type: 'clock-out', id: person.id })}
+            >
+              Out
             </button>
           </>
         )}
