@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { useBoard, useDispatch } from '../store'
+import { useRole } from '../sync'
+import { managerUrl } from '../role'
 import { Confirm, Modal, NamePrompt } from './Modal'
 
 export function Settings({ onClose }: { onClose: () => void }) {
@@ -14,8 +16,21 @@ export function Settings({ onClose }: { onClose: () => void }) {
     | null
   >(null)
   const [confirm, setConfirm] = useState<'reset' | 'samples' | null>(null)
+  const [copied, setCopied] = useState(false)
+  const { room } = useRole()
+  const link = typeof window !== 'undefined' ? managerUrl(room) : ''
 
   const house = entertainers.filter((e) => !e.guest)
+
+  async function copyManagerLink() {
+    try {
+      await navigator.clipboard.writeText(link)
+      setCopied(true)
+      window.setTimeout(() => setCopied(false), 2000)
+    } catch {
+      window.prompt('Copy manager link', link)
+    }
+  }
 
   return (
     <>
@@ -27,6 +42,19 @@ export function Settings({ onClose }: { onClose: () => void }) {
             <span className="pick-action">Rename</span>
           </button>
           <p className="hint">Shown on the board header. Leave blank to use Stageboard.</p>
+        </section>
+
+        <section className="sheet-section">
+          <h3>Manager tablet</h3>
+          <p className="hint">
+            Same live board on a second tablet. They can add a girl or put her
+            on dance/break. They cannot run stages or the rotation. Keep this
+            DJ board open.
+          </p>
+          <p className="hint">Room {room}</p>
+          <button className="btn btn-gold" onClick={copyManagerLink}>
+            {copied ? 'Copied' : 'Copy manager link'}
+          </button>
         </section>
 
 

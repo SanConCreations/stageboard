@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { useBoard, useDispatch } from '../store'
 import { Modal, NamePrompt } from './Modal'
 
-export function ClockInSheet({ onClose }: { onClose: () => void }) {
+export function ClockInSheet({ onClose, restricted }: { onClose: () => void; restricted?: boolean }) {
   const { entertainers, clockedIn } = useBoard()
   const dispatch = useDispatch()
   const [prompt, setPrompt] = useState<'house' | 'guest' | null>(null)
@@ -58,12 +58,14 @@ export function ClockInSheet({ onClose }: { onClose: () => void }) {
                       {e.guest && <em className="guest-tag">guest</em>}
                       {e.sample && <em className="sample-tag">sample</em>}
                     </span>
+                    {!restricted && (
                     <button
                       className="btn btn-ghost btn-sm"
                       onClick={() => dispatch({ type: 'clock-out', id: e.id })}
                     >
                       Clock out
                     </button>
+                    )}
                   </div>
                 </li>
               ))}
@@ -71,7 +73,7 @@ export function ClockInSheet({ onClose }: { onClose: () => void }) {
           </section>
         )}
 
-        {archived.length > 0 && (
+        {archived.length > 0 && !restricted && (
           <section className="sheet-section">
             <h3>Archived</h3>
             <ul className="pick-list">

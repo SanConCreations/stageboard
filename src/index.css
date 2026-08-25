@@ -1009,3 +1009,17 @@ button,
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+.link-pill--live {
+  border-color: var(--avail);
+  color: var(--avail);
+}
+.link-pill--waiting,
+.link-pill--connecting {
+  border-color: var(--gold-dim);
+  color: var(--muted);
+}
+.link-pill--error {
+  border-color: var(--danger);
+  color: var(--danger);
+}

@@ -505,6 +505,9 @@ function reducer(state: AppState, action: Action): AppState {
         ),
       }
 
+    case 'replace-state':
+      return action.state
+
     case 'clear-sample-roster': {
       const sampleIds = new Set(
         state.entertainers.filter((e) => e.sample).map((e) => e.id),
@@ -543,7 +546,7 @@ function hydrate(): AppState {
 }
 
 const StateCtx = createContext<AppState | null>(null)
-const DispatchCtx = createContext<Dispatch<Action> | null>(null)
+export const DispatchCtx = createContext<Dispatch<Action> | null>(null)
 
 export function StoreProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(reducer, undefined, hydrate)

@@ -79,3 +79,4 @@ export type Action =
   | { type: 'rename-stage'; id: StageId; name: string }
   | { type: 'toggle-auto-rotate'; id: StageId }
   | { type: 'clear-sample-roster' }
+  | { type: 'replace-state'; state: AppState }

@@ -5,7 +5,7 @@ import { useNow } from '../hooks/useNow'
 import { Modal } from './Modal'
 import type { EntertainerId, Occupancy, Stage } from '../types'
 
-export function Stages({ onNeedPeople }: { onNeedPeople: () => void }) {
+export function Stages({ onNeedPeople, readOnly }: { onNeedPeople: () => void; readOnly?: boolean }) {
   const { stages, occupancy, queue, entertainers, setLengthMs } = useBoard()
   const preview = queue.slice(0, 3).map((id) => {
     const p = entertainers.find((e) => e.id === id)
@@ -36,6 +36,7 @@ export function Stages({ onNeedPeople }: { onNeedPeople: () => void }) {
             occupancy={occupancy[stage.id] ?? null}
             nextId={queue[0]}
             onNeedPeople={onNeedPeople}
+            readOnly={readOnly}
           />
         ))}
       </div>
@@ -49,12 +50,14 @@ function StageCard({
   occupancy,
   nextId,
   onNeedPeople,
+  readOnly,
 }: {
   stage: Stage
   index: number
   occupancy: Occupancy | null
   nextId?: EntertainerId
   onNeedPeople: () => void
+  readOnly?: boolean
 }) {
   const tick = useNow()
   const dispatch = useDispatch()
@@ -112,7 +115,7 @@ function StageCard({
         </div>
       )}
 
-      <footer className="stage-actions">
+      {!readOnly && <footer className="stage-actions">
         {occupancy ? (
           <>
             <button
@@ -154,9 +157,9 @@ function StageCard({
             )}
           </>
         )}
-      </footer>
+      </footer>}
 
-      {picker && (
+      {!readOnly && picker && (
         <Modal
           title={picker === 'swap' ? `Swap on ${stage.name}` : `Send up · ${stage.name}`}
           onClose={() => setPicker(null)}

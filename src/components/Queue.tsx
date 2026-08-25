@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useBoard, useDispatch } from '../store'
 import { Modal } from './Modal'
 
-export function Queue() {
+export function Queue({ readOnly }: { readOnly?: boolean }) {
   const { queue, entertainers, clockedIn, statuses } = useBoard()
   const dispatch = useDispatch()
   const [adding, setAdding] = useState(false)
@@ -36,7 +36,7 @@ export function Queue() {
                 {e.name}
                 {e.guest && <em className="guest-tag">guest</em>}
               </span>
-              <div className="q-actions">
+              {!readOnly && <div className="q-actions">
                 <button
                   className="icon-btn"
                   aria-label="Move up"
@@ -68,12 +68,13 @@ export function Queue() {
                 >
                   ×
                 </button>
-              </div>
+              </div>}
             </li>
           ))}
         </ol>
       )}
 
+      {!readOnly && (
       <button
         className="btn btn-ghost btn-block"
         onClick={() => setAdding(true)}
@@ -81,8 +82,9 @@ export function Queue() {
       >
         {addable.length === 0 ? 'No one available to add' : '+ Add to rotation'}
       </button>
+      )}
 
-      {adding && (
+      {adding && !readOnly && (
         <Modal title="Add to rotation" onClose={() => setAdding(false)}>
           <ul className="pick-list">
             {addable.map((e) => (

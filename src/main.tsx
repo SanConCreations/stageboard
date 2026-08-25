@@ -11,13 +11,16 @@ import '@fontsource/barlow/700.css'
 import './index.css'
 import App from './App'
 import { StoreProvider } from './store'
+import { SyncProvider } from './sync'
 
 registerSW({ immediate: true })
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <StoreProvider>
-      <App />
+      <SyncProvider>
+        <App />
+      </SyncProvider>
     </StoreProvider>
   </StrictMode>,
 )

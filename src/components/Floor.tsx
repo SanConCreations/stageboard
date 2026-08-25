@@ -3,7 +3,7 @@ import { formatElapsed } from '../time'
 import { useNow } from '../hooks/useNow'
 import type { Entertainer, EntertainerStatus } from '../types'
 
-export function Floor() {
+export function Floor({ restricted }: { restricted?: boolean }) {
   const { clockedIn, entertainers, statuses, stages, occupancy, queue } = useBoard()
   const people = clockedIn
     .map((id) => entertainers.find((e) => e.id === id))
@@ -29,6 +29,7 @@ export function Floor() {
         people={groups.available}
         statuses={statuses}
         queue={queue}
+        restricted={restricted}
       />
       <FloorGroup
         kind="dance"
@@ -36,6 +37,7 @@ export function Floor() {
         people={groups.dance}
         statuses={statuses}
         queue={queue}
+        restricted={restricted}
       />
       <FloorGroup
         kind="break"
@@ -43,6 +45,7 @@ export function Floor() {
         people={groups.break}
         statuses={statuses}
         queue={queue}
+        restricted={restricted}
       />
 
       {groups.stage.length > 0 && (
@@ -76,12 +79,14 @@ function FloorGroup({
   people,
   statuses,
   queue,
+  restricted,
 }: {
   kind: 'available' | 'dance' | 'break'
   title: string
   people: Entertainer[]
   statuses: Record<string, EntertainerStatus>
   queue: string[]
+  restricted?: boolean
 }) {
   return (
     <div className={`floor-group floor-group--${kind}`}>
@@ -99,6 +104,7 @@ function FloorGroup({
               person={e}
               status={statuses[e.id]}
               inQueue={queue.includes(e.id)}
+              restricted={restricted}
             />
           ))}
         </ul>
@@ -111,10 +117,12 @@ function FloorRow({
   person,
   status,
   inQueue,
+  restricted,
 }: {
   person: Entertainer
   status?: EntertainerStatus
   inQueue: boolean
+  restricted?: boolean
 }) {
   const dispatch = useDispatch()
   const tick = useNow()
@@ -135,6 +143,7 @@ function FloorRow({
       <div className="floor-actions">
         {kind === 'available' && (
           <>
+            {!restricted && (
             <button
               className={`btn btn-sm ${inQueue ? 'btn-ghost' : 'btn-gold'}`}
               onClick={() =>
@@ -143,6 +152,7 @@ function FloorRow({
             >
               {inQueue ? 'Queued' : 'On deck'}
             </button>
+            )}
             <button
               className="btn btn-sm btn-dance"
               onClick={() => dispatch({ type: 'start-dance', id: person.id })}
