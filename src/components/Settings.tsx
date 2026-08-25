@@ -3,7 +3,7 @@ import { useBoard, useDispatch } from '../store'
 import { Confirm, Modal, NamePrompt } from './Modal'
 
 export function Settings({ onClose }: { onClose: () => void }) {
-  const { clubName, stages, entertainers, sampleRosterPresent } = useBoard()
+  const { clubName, stages, entertainers, sampleRosterPresent, setLengthMs } = useBoard()
   const dispatch = useDispatch()
   const [prompt, setPrompt] = useState<
     | { kind: 'club' }
@@ -27,6 +27,28 @@ export function Settings({ onClose }: { onClose: () => void }) {
             <span className="pick-action">Rename</span>
           </button>
           <p className="hint">Shown on the board header. Leave blank to use Stageboard.</p>
+        </section>
+
+
+        <section className="sheet-section">
+          <h3>Set length</h3>
+          <p className="hint">
+            How long a girl stays on one stage. When it hits zero she moves up
+            (Stage 3 → Stage 2 → Main). After Main she goes to the bottom of
+            Who&apos;s Next. Last stage is where they start; first stage is
+            Main.
+          </p>
+          <div className="set-length-row">
+            {[2, 3, 4, 5, 6].map((m) => (
+              <button
+                key={m}
+                className={`btn btn-sm ${setLengthMs === m * 60 * 1000 ? 'btn-gold' : 'btn-ghost'}`}
+                onClick={() => dispatch({ type: 'set-set-length', ms: m * 60 * 1000 })}
+              >
+                {m} min
+              </button>
+            ))}
+          </div>
         </section>
 
         <section className="sheet-section">

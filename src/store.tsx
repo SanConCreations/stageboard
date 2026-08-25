@@ -61,6 +61,7 @@ export function createInitialState(): AppState {
     version: 1,
     clubName: 'BX Club',
     sampleRosterPresent: true,
+    setLengthMs: 4 * 60 * 1000,
     entertainers: sampleEntertainers(),
     stages,
     clockedIn: [],
@@ -153,6 +154,78 @@ function sendUp(state: AppState, stageId: StageId, entertainerId: EntertainerId)
     },
     queue: pullFromQueue(state.queue, entertainerId),
   }
+}
+
+
+const MIN_SET_MS = 30 * 1000
+const MAX_SET_MS = 20 * 60 * 1000
+
+function entryStage(state: AppState) {
+  return state.stages[state.stages.length - 1] ?? null
+}
+
+function putOnStage(
+  state: AppState,
+  stageId: StageId,
+  entertainerId: EntertainerId,
+): AppState {
+  const stage = state.stages.find((s) => s.id === stageId)
+  if (!stage) return state
+  const t = now()
+  const occupancy: Record<StageId, Occupancy | null> = { ...state.occupancy }
+  for (const sid of Object.keys(occupancy)) {
+    if (occupancy[sid]?.entertainerId === entertainerId) occupancy[sid] = null
+  }
+  occupancy[stageId] = { entertainerId, since: t }
+  return {
+    ...state,
+    occupancy,
+    statuses: {
+      ...state.statuses,
+      [entertainerId]: { kind: 'stage', since: t, stageId },
+    },
+    queue: pullFromQueue(state.queue, entertainerId),
+  }
+}
+
+function enqueueBottom(state: AppState, id: EntertainerId): AppState {
+  if (!isClockedIn(state, id)) return state
+  if (state.queue.includes(id)) return state
+  return { ...state, queue: [...state.queue, id] }
+}
+
+/** Feature (index 0) is Main. Last stage is where they start. Empty slots pull from below, then Who's Next onto the entry stage. */
+function backfillHoles(state: AppState): AppState {
+  let s = state
+  for (let i = 0; i < s.stages.length - 1; i++) {
+    const here = s.stages[i].id
+    const below = s.stages[i + 1].id
+    const from = s.occupancy[below]
+    if (!s.occupancy[here] && from) {
+      s = putOnStage(s, here, from.entertainerId)
+    }
+  }
+  const entry = entryStage(s)
+  if (entry && !s.occupancy[entry.id] && s.queue[0]) {
+    s = sendUp(s, entry.id, s.queue[0])
+  }
+  return s
+}
+
+function endSetOn(state: AppState, stageId: StageId): AppState {
+  const occ = state.occupancy[stageId]
+  if (!occ) return state
+  const i = state.stages.findIndex((s) => s.id === stageId)
+  if (i < 0) return state
+  if (i === 0) {
+    // Main: come down, go to the bottom of Who's Next, everyone shifts up.
+    let next = makeAvailable(state, occ.entertainerId)
+    next = enqueueBottom(next, occ.entertainerId)
+    return backfillHoles(next)
+  }
+  const above = state.stages[i - 1]
+  if (state.occupancy[above.id]) return state
+  return backfillHoles(putOnStage(state, above.id, occ.entertainerId))
 }
 
 function reducer(state: AppState, action: Action): AppState {
@@ -288,21 +361,36 @@ function reducer(state: AppState, action: Action): AppState {
       return sendUp(state, action.stageId, action.entertainerId)
 
     case 'send-next': {
+      const entry = entryStage(state)
+      if (!entry) return state
       const nextId = state.queue[0]
       if (!nextId) return state
-      return sendUp(state, action.stageId, nextId)
+      return sendUp(state, entry.id, nextId)
     }
 
-    case 'end-set': {
-      const occ = state.occupancy[action.stageId]
-      if (!occ) return state
-      let next = makeAvailable(state, occ.entertainerId)
-      const stage = next.stages.find((s) => s.id === action.stageId)
-      const shouldSend = action.sendNext || !!stage?.autoRotate
-      if (shouldSend && next.queue[0]) {
-        next = sendUp(next, action.stageId, next.queue[0])
+    case 'end-set':
+      return endSetOn(state, action.stageId)
+
+    case 'advance-expired': {
+      const t = now()
+      let s = state
+      for (let i = 0; i < s.stages.length; i++) {
+        const st = s.stages[i]
+        const occ = s.occupancy[st.id]
+        if (!occ) continue
+        if (t - occ.since < s.setLengthMs) continue
+        s = endSetOn(s, st.id)
       }
-      return next
+      return s
+    }
+
+    case 'set-set-length': {
+      const ms = Math.round(action.ms)
+      if (!Number.isFinite(ms)) return state
+      return {
+        ...state,
+        setLengthMs: Math.min(MAX_SET_MS, Math.max(MIN_SET_MS, ms)),
+      }
     }
 
     case 'swap': {
@@ -467,6 +555,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       // Quota or private mode — board still works for the session.
     }
   }, [state])
+
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      dispatch({ type: 'advance-expired' })
+    }, 1000)
+    return () => window.clearInterval(id)
+  }, [])
 
   return (
     <StateCtx.Provider value={state}>

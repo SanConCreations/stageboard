@@ -26,3 +26,9 @@ export function formatNightDate(ts: number | null): string {
     day: 'numeric',
   })
 }
+
+/** Countdown to the end of a set. Floor at 0:00. */
+export function formatRemaining(ms: number): string {
+  if (!Number.isFinite(ms) || ms < 0) ms = 0
+  return formatElapsed(ms)
+}

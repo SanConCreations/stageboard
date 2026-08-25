@@ -366,6 +366,14 @@ ol {
   color: var(--gold);
 }
 
+.stage-role {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
 .auto-rot {
   display: flex;
   align-items: center;
@@ -426,6 +434,10 @@ ol {
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.08em;
   color: var(--gold);
+}
+
+.stage-timer.is-up {
+  color: var(--dance);
 }
 
 .stage-actions {
@@ -983,4 +995,17 @@ button,
 
 .app {
   overscroll-behavior: none;
+}
+
+.set-length-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.stage-actions .btn {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }

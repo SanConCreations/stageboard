@@ -25,7 +25,7 @@ export function Queue() {
 
       {people.length === 0 ? (
         <p className="zone-empty">
-          Rotation is empty. Add available talent so you can send next without hunting.
+          Rotation is empty. Add available talent — next girl always walks on Stage 3.
         </p>
       ) : (
         <ol className="queue-list">

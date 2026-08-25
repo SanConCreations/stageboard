@@ -37,6 +37,8 @@ export interface AppState {
   clubName: string
   /** False after the DJ clears the seeded demo roster. */
   sampleRosterPresent: boolean
+  /** Length of one stage set. When it hits 0 she moves up (or off Main). */
+  setLengthMs: number
   entertainers: Entertainer[]
   stages: Stage[]
   clockedIn: EntertainerId[]
@@ -61,8 +63,10 @@ export type Action =
   | { type: 'end-dance'; id: EntertainerId }
   | { type: 'start-break'; id: EntertainerId }
   | { type: 'send-up'; stageId: StageId; entertainerId: EntertainerId }
-  | { type: 'send-next'; stageId: StageId }
-  | { type: 'end-set'; stageId: StageId; sendNext: boolean }
+  | { type: 'send-next' }
+  | { type: 'end-set'; stageId: StageId }
+  | { type: 'advance-expired' }
+  | { type: 'set-set-length'; ms: number }
   | { type: 'swap'; stageId: StageId; entertainerId: EntertainerId }
   | { type: 'queue-add'; id: EntertainerId }
   | { type: 'queue-remove'; id: EntertainerId }

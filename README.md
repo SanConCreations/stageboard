@@ -37,9 +37,9 @@ Tonight's roster. House talent persists night after night (add, rename, archive)
 
 Status. Everyone who is clocked in is exactly one of: Available, In a dance (with an elapsed timer), On stage, or Break. Status changes are one or two taps on the floor list or stage cards. Starting a dance pulls that person out of Who's Next until they are available again.
 
-Stages. Default three stages (Main stage, Stage 2, Stage 3) for BX Club — add, remove, or rename in Settings. A stage is either loud OPEN or shows the performer plus set timer. Send up, send next, end set, and swap are on the card. One person per stage; nobody can be on two stages or on stage and in a dance at once.
+Stages. Default three stages for BX Club, in ladder order: girls start on Stage 3, move to Stage 2, then Main. Set length is in Settings (default 4 min). When the countdown hits zero she moves up; after Main she goes to the bottom of Who's Next and everyone behind her shifts up, with the next girl walking on Stage 3. You can still tap to move her early. One person per stage; nobody can be on two stages or on stage and in a dance at once.
 
-Who's Next. Ordered rotation of available talent. Add, move up/down, skip, remove. Send next on an open stage (or after ending a set) takes the person at the top. A short Up next preview sits on the stages header so you can announce without hunting. Optional per-stage auto-rotate (off by default) sends the next person the moment a set ends.
+Who's Next. Ordered rotation. Add, move up/down, skip, remove. Next girl always enters on Stage 3. After a Main set they drop to the bottom of this list and cycle again.
 
 A sample house roster (Jade, Raven, Skye, Nova, Diamond, Lola) is seeded so you can tap around immediately. Those names are fake demo data, not staff — clear them in Settings.
 

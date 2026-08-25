@@ -1,35 +1,38 @@
 import { useState } from 'react'
 import { useBoard, useDispatch, useName } from '../store'
-import { formatElapsed } from '../time'
+import { formatRemaining } from '../time'
 import { useNow } from '../hooks/useNow'
 import { Modal } from './Modal'
 import type { EntertainerId, Occupancy, Stage } from '../types'
 
 export function Stages({ onNeedPeople }: { onNeedPeople: () => void }) {
-  const { stages, occupancy, queue, entertainers } = useBoard()
+  const { stages, occupancy, queue, entertainers, setLengthMs } = useBoard()
   const preview = queue.slice(0, 3).map((id) => {
     const p = entertainers.find((e) => e.id === id)
     return p?.name ?? '—'
   })
+  const setLabel = formatRemaining(setLengthMs)
+  const path = [...stages].reverse().map((s) => s.name).join('  →  ')
 
   return (
     <section className="zone zone-stages">
       <header className="zone-head">
         <h1>Stages</h1>
-        <div className="up-next-preview" title="Who's next">
-          <span className="up-next-label">Up next</span>
+        <div className="up-next-preview" title="Ladder and rotation">
+          <span className="up-next-label">Sets {setLabel}</span>
           {preview.length === 0 ? (
-            <span className="up-next-empty">Queue empty</span>
+            <span className="up-next-empty">{path}</span>
           ) : (
             <span className="up-next-names">{preview.join('  ·  ')}</span>
           )}
         </div>
       </header>
       <div className={`stage-grid stage-grid--${Math.min(stages.length, 4)}`}>
-        {stages.map((stage) => (
+        {stages.map((stage, i) => (
           <StageCard
             key={stage.id}
             stage={stage}
+            index={i}
             occupancy={occupancy[stage.id] ?? null}
             nextId={queue[0]}
             onNeedPeople={onNeedPeople}
@@ -42,22 +45,32 @@ export function Stages({ onNeedPeople }: { onNeedPeople: () => void }) {
 
 function StageCard({
   stage,
+  index,
   occupancy,
   nextId,
   onNeedPeople,
 }: {
   stage: Stage
+  index: number
   occupancy: Occupancy | null
   nextId?: EntertainerId
   onNeedPeople: () => void
 }) {
   const tick = useNow()
   const dispatch = useDispatch()
-  const { statuses, clockedIn, entertainers, queue } = useBoard()
+  const { statuses, clockedIn, entertainers, queue, stages, occupancy: allOcc, setLengthMs } =
+    useBoard()
   const performer = useName(occupancy?.entertainerId ?? '')
   const nextName = useName(nextId ?? '')
   const [picker, setPicker] = useState<'send' | 'swap' | null>(null)
-  const [endPrompt, setEndPrompt] = useState(false)
+
+  const isFeature = index === 0
+  const isEntry = index === stages.length - 1
+  const above = index > 0 ? stages[index - 1] : null
+  const aboveBusy = !!(above && allOcc[above.id])
+  const remaining = occupancy ? setLengthMs - (tick - occupancy.since) : 0
+  const expired = occupancy ? remaining <= 0 : false
+  const waiting = !!(occupancy && aboveBusy)
 
   const available = clockedIn
     .filter((id) => statuses[id]?.kind === 'available')
@@ -71,36 +84,27 @@ function StageCard({
     else setPicker('send')
   }
 
-  function requestEnd() {
-    if (stage.autoRotate && hasNext) {
-      dispatch({ type: 'end-set', stageId: stage.id, sendNext: true })
-      return
-    }
-    if (hasNext) {
-      setEndPrompt(true)
-      return
-    }
-    dispatch({ type: 'end-set', stageId: stage.id, sendNext: false })
-  }
+  const moveLabel = isFeature
+    ? 'End set'
+    : above
+      ? `To ${above.name}`
+      : 'Move up'
 
   return (
     <article className={`stage-card ${occupancy ? 'is-live' : 'is-open'}`}>
       <header className="stage-card-head">
         <h2>{stage.name}</h2>
-        <label className="auto-rot" title="When a set ends, send the next person automatically">
-          <input
-            type="checkbox"
-            checked={stage.autoRotate}
-            onChange={() => dispatch({ type: 'toggle-auto-rotate', id: stage.id })}
-          />
-          Auto
-        </label>
+        <span className="stage-role">
+          {isEntry ? 'Start' : isFeature ? 'Feature' : 'Next up'}
+        </span>
       </header>
 
       {occupancy ? (
         <div className="stage-status">
           <div className="stage-name">{performer}</div>
-          <div className="stage-timer">{formatElapsed(tick - occupancy.since)}</div>
+          <div className={`stage-timer ${expired || waiting ? 'is-up' : ''}`}>
+            {waiting ? 'WAIT' : formatRemaining(remaining)}
+          </div>
         </div>
       ) : (
         <div className="stage-status">
@@ -111,8 +115,12 @@ function StageCard({
       <footer className="stage-actions">
         {occupancy ? (
           <>
-            <button className="btn btn-gold" onClick={requestEnd}>
-              End set
+            <button
+              className="btn btn-gold"
+              disabled={waiting}
+              onClick={() => dispatch({ type: 'end-set', stageId: stage.id })}
+            >
+              {waiting && above ? `Wait · ${above.name}` : moveLabel}
             </button>
             <button
               className="btn btn-ghost"
@@ -125,15 +133,25 @@ function StageCard({
         ) : (
           <>
             <button className="btn btn-gold" onClick={openSend}>
-              Send up
+              {isEntry ? 'Send up' : 'Send up'}
             </button>
-            <button
-              className="btn btn-ghost"
-              disabled={!hasNext}
-              onClick={() => dispatch({ type: 'send-next', stageId: stage.id })}
-            >
-              {hasNext ? `Next · ${nextName}` : 'Send next'}
-            </button>
+            {isEntry ? (
+              <button
+                className="btn btn-ghost"
+                disabled={!hasNext}
+                onClick={() => dispatch({ type: 'send-next' })}
+              >
+                {hasNext ? `Next · ${nextName}` : 'Send next'}
+              </button>
+            ) : (
+              <button
+                className="btn btn-ghost"
+                disabled={!hasNext || !!(allOcc[stages[stages.length - 1].id])}
+                onClick={() => dispatch({ type: 'send-next' })}
+              >
+                {hasNext ? `Onto start` : 'Send next'}
+              </button>
+            )}
           </>
         )}
       </footer>
@@ -143,11 +161,11 @@ function StageCard({
           title={picker === 'swap' ? `Swap on ${stage.name}` : `Send up · ${stage.name}`}
           onClose={() => setPicker(null)}
         >
-          {hasNext && picker === 'send' && nextId && (
+          {hasNext && picker === 'send' && nextId && isEntry && (
             <button
               className="pick-row pick-row--accent"
               onClick={() => {
-                dispatch({ type: 'send-next', stageId: stage.id })
+                dispatch({ type: 'send-next' })
                 setPicker(null)
               }}
             >
@@ -178,34 +196,6 @@ function StageCard({
               </li>
             ))}
           </ul>
-        </Modal>
-      )}
-
-      {endPrompt && occupancy && (
-        <Modal title={`End set · ${stage.name}`} onClose={() => setEndPrompt(false)}>
-          <p className="confirm-body">
-            {performer} comes down. Send {nextName} up now, or leave {stage.name} open?
-          </p>
-          <div className="btn-row">
-            <button
-              className="btn btn-ghost"
-              onClick={() => {
-                dispatch({ type: 'end-set', stageId: stage.id, sendNext: false })
-                setEndPrompt(false)
-              }}
-            >
-              Leave open
-            </button>
-            <button
-              className="btn btn-gold"
-              onClick={() => {
-                dispatch({ type: 'end-set', stageId: stage.id, sendNext: true })
-                setEndPrompt(false)
-              }}
-            >
-              Send {nextName} up
-            </button>
-          </div>
         </Modal>
       )}
     </article>
