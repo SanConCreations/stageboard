@@ -374,6 +374,70 @@ ol {
   white-space: nowrap;
 }
 
+.stage-card-head-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.stage-toggle {
+  min-height: 32px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.stage-toggle.is-on {
+  border-color: var(--open-dim);
+  color: var(--open);
+}
+
+.stage-toggle.is-off {
+  border-color: var(--line);
+  color: var(--muted);
+}
+
+.stage-card.is-off {
+  opacity: 0.62;
+  border-color: var(--line);
+  box-shadow: none;
+}
+
+.open-stamp--off {
+  color: var(--muted);
+  text-shadow: none;
+  animation: none;
+}
+
+.stage-timer-row {
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.stage-timer-row .stage-timer {
+  margin-top: 0;
+}
+
+.pause-tag {
+  margin-top: 4px;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+
 .auto-rot {
   display: flex;
   align-items: center;

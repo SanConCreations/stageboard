@@ -31,9 +31,9 @@ function now(): number {
 
 function defaultStages(): Stage[] {
   return [
-    { id: 'stage-main', name: 'Main stage', autoRotate: false },
-    { id: 'stage-2', name: 'Stage 2', autoRotate: false },
-    { id: 'stage-3', name: 'Stage 3', autoRotate: false },
+    { id: 'stage-main', name: 'Main stage', autoRotate: false, enabled: true },
+    { id: 'stage-2', name: 'Stage 2', autoRotate: false, enabled: true },
+    { id: 'stage-3', name: 'Stage 3', autoRotate: false, enabled: true },
   ]
 }
 
@@ -140,7 +140,7 @@ function sendUp(state: AppState, stageId: StageId, entertainerId: EntertainerId)
   if (!isAvailable(state, entertainerId)) return state
   if (state.occupancy[stageId]) return state
   const stage = state.stages.find((s) => s.id === stageId)
-  if (!stage) return state
+  if (!stage || stage.enabled === false) return state
   const t = now()
   return {
     ...state,
@@ -160,8 +160,14 @@ function sendUp(state: AppState, stageId: StageId, entertainerId: EntertainerId)
 const MIN_SET_MS = 30 * 1000
 const MAX_SET_MS = 20 * 60 * 1000
 
+function liveStages(state: AppState): Stage[] {
+  const live = state.stages.filter((s) => s.enabled !== false)
+  return live.length > 0 ? live : state.stages
+}
+
 function entryStage(state: AppState) {
-  return state.stages[state.stages.length - 1] ?? null
+  const live = liveStages(state)
+  return live[live.length - 1] ?? null
 }
 
 function putOnStage(
@@ -170,7 +176,7 @@ function putOnStage(
   entertainerId: EntertainerId,
 ): AppState {
   const stage = state.stages.find((s) => s.id === stageId)
-  if (!stage) return state
+  if (!stage || stage.enabled === false) return state
   const t = now()
   const occupancy: Record<StageId, Occupancy | null> = { ...state.occupancy }
   for (const sid of Object.keys(occupancy)) {
@@ -194,18 +200,19 @@ function enqueueBottom(state: AppState, id: EntertainerId): AppState {
   return { ...state, queue: [...state.queue, id] }
 }
 
-/** Feature (index 0) is Main. Last stage is where they start. Empty slots pull from below, then Who's Next onto the entry stage. */
+/** Feature is the first live stage (usually Main). Last live stage is where they start. Dark stages are skipped. */
 function backfillHoles(state: AppState): AppState {
   let s = state
-  for (let i = 0; i < s.stages.length - 1; i++) {
-    const here = s.stages[i].id
-    const below = s.stages[i + 1].id
+  const live = liveStages(s)
+  for (let i = 0; i < live.length - 1; i++) {
+    const here = live[i].id
+    const below = live[i + 1].id
     const from = s.occupancy[below]
     if (!s.occupancy[here] && from) {
       s = putOnStage(s, here, from.entertainerId)
     }
   }
-  const entry = entryStage(s)
+  const entry = live[live.length - 1]
   if (entry && !s.occupancy[entry.id] && s.queue[0]) {
     s = sendUp(s, entry.id, s.queue[0])
   }
@@ -215,15 +222,20 @@ function backfillHoles(state: AppState): AppState {
 function endSetOn(state: AppState, stageId: StageId): AppState {
   const occ = state.occupancy[stageId]
   if (!occ) return state
-  const i = state.stages.findIndex((s) => s.id === stageId)
-  if (i < 0) return state
-  if (i === 0) {
-    // Main: come down, go to the bottom of Who's Next, everyone shifts up.
+  const live = liveStages(state)
+  const i = live.findIndex((s) => s.id === stageId)
+  if (i < 0) {
     let next = makeAvailable(state, occ.entertainerId)
     next = enqueueBottom(next, occ.entertainerId)
     return backfillHoles(next)
   }
-  const above = state.stages[i - 1]
+  if (i === 0) {
+    // Feature among live stages: come down, bottom of Who's Next, shift up.
+    let next = makeAvailable(state, occ.entertainerId)
+    next = enqueueBottom(next, occ.entertainerId)
+    return backfillHoles(next)
+  }
+  const above = live[i - 1]
   if (state.occupancy[above.id]) return state
   return backfillHoles(putOnStage(state, above.id, occ.entertainerId))
 }
@@ -374,10 +386,9 @@ function reducer(state: AppState, action: Action): AppState {
     case 'advance-expired': {
       const t = now()
       let s = state
-      for (let i = 0; i < s.stages.length; i++) {
-        const st = s.stages[i]
+      for (const st of liveStages(s)) {
         const occ = s.occupancy[st.id]
-        if (!occ) continue
+        if (!occ || occ.pausedAt) continue
         if (t - occ.since < s.setLengthMs) continue
         s = endSetOn(s, st.id)
       }
@@ -464,7 +475,7 @@ function reducer(state: AppState, action: Action): AppState {
       const name = sanitizeName(action.name)
       if (!name) return state
       const id = `stage-${uid()}`
-      const stage: Stage = { id, name, autoRotate: false }
+      const stage: Stage = { id, name, autoRotate: false, enabled: true }
       return {
         ...state,
         stages: [...state.stages, stage],
@@ -505,6 +516,51 @@ function reducer(state: AppState, action: Action): AppState {
         ),
       }
 
+    case 'toggle-pause': {
+      const occ = state.occupancy[action.stageId]
+      if (!occ) return state
+      if (occ.pausedAt) {
+        const elapsed = Math.max(0, occ.pausedAt - occ.since)
+        return {
+          ...state,
+          occupancy: {
+            ...state.occupancy,
+            [action.stageId]: { entertainerId: occ.entertainerId, since: now() - elapsed },
+          },
+        }
+      }
+      return {
+        ...state,
+        occupancy: {
+          ...state.occupancy,
+          [action.stageId]: { ...occ, pausedAt: now() },
+        },
+      }
+    }
+
+    case 'toggle-stage': {
+      const target = state.stages.find((s) => s.id === action.id)
+      if (!target) return state
+      const turningOff = target.enabled !== false
+      const liveCount = state.stages.filter((s) => s.enabled !== false).length
+      if (turningOff && liveCount <= 1) return state
+      let next = state
+      if (turningOff) {
+        const occ = next.occupancy[action.id]
+        if (occ) {
+          next = makeAvailable(next, occ.entertainerId)
+          next = enqueueBottom(next, occ.entertainerId)
+        }
+      }
+      next = {
+        ...next,
+        stages: next.stages.map((s) =>
+          s.id === action.id ? { ...s, enabled: !turningOff } : s,
+        ),
+      }
+      return turningOff ? backfillHoles(next) : next
+    }
+
     case 'replace-state':
       return action.state
 
@@ -539,7 +595,11 @@ function hydrate(): AppState {
     for (const s of parsed.stages) {
       occupancy[s.id] = parsed.occupancy?.[s.id] ?? null
     }
-    return { ...createInitialState(), ...parsed, occupancy }
+    const stages = parsed.stages.map((s) => ({
+      ...s,
+      enabled: s.enabled !== false,
+    }))
+    return { ...createInitialState(), ...parsed, stages, occupancy }
   } catch {
     return createInitialState()
   }

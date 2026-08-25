@@ -58,7 +58,7 @@ export function Floor({ restricted }: { restricted?: boolean }) {
               <span key={e.id} className="stage-chip">
                 {e.name}
                 <em>{stage?.name ?? 'Stage'}</em>
-                {occ ? <OnStageMini since={occ.since} /> : null}
+                {occ ? <OnStageMini occupancy={occ} /> : null}
               </span>
             )
           })}
@@ -68,9 +68,10 @@ export function Floor({ restricted }: { restricted?: boolean }) {
   )
 }
 
-function OnStageMini({ since }: { since: number }) {
+function OnStageMini({ occupancy }: { occupancy: { since: number; pausedAt?: number } }) {
   const tick = useNow()
-  return <i>{formatElapsed(tick - since)}</i>
+  const elapsed = (occupancy.pausedAt ?? tick) - occupancy.since
+  return <i>{occupancy.pausedAt ? 'paused' : formatElapsed(elapsed)}</i>
 }
 
 function FloorGroup({

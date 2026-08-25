@@ -25,11 +25,15 @@ export interface Stage {
   id: StageId
   name: string
   autoRotate: boolean
+  /** False = dark tonight; rotation skips it. */
+  enabled: boolean
 }
 
 export interface Occupancy {
   entertainerId: EntertainerId
   since: number
+  /** When set, the countdown is frozen at this timestamp. */
+  pausedAt?: number
 }
 
 export interface AppState {
@@ -78,5 +82,7 @@ export type Action =
   | { type: 'remove-stage'; id: StageId }
   | { type: 'rename-stage'; id: StageId; name: string }
   | { type: 'toggle-auto-rotate'; id: StageId }
+  | { type: 'toggle-pause'; stageId: StageId }
+  | { type: 'toggle-stage'; id: StageId }
   | { type: 'clear-sample-roster' }
   | { type: 'replace-state'; state: AppState }

@@ -7,12 +7,13 @@ import type { EntertainerId, Occupancy, Stage } from '../types'
 
 export function Stages({ onNeedPeople, readOnly }: { onNeedPeople: () => void; readOnly?: boolean }) {
   const { stages, occupancy, queue, entertainers, setLengthMs } = useBoard()
+  const live = stages.filter((s) => s.enabled !== false)
   const preview = queue.slice(0, 3).map((id) => {
     const p = entertainers.find((e) => e.id === id)
     return p?.name ?? '—'
   })
   const setLabel = formatRemaining(setLengthMs)
-  const path = [...stages].reverse().map((s) => s.name).join('  →  ')
+  const path = [...live].reverse().map((s) => s.name).join('  →  ')
 
   return (
     <section className="zone zone-stages">
@@ -28,11 +29,10 @@ export function Stages({ onNeedPeople, readOnly }: { onNeedPeople: () => void; r
         </div>
       </header>
       <div className={`stage-grid stage-grid--${Math.min(stages.length, 4)}`}>
-        {stages.map((stage, i) => (
+        {stages.map((stage) => (
           <StageCard
             key={stage.id}
             stage={stage}
-            index={i}
             occupancy={occupancy[stage.id] ?? null}
             nextId={queue[0]}
             onNeedPeople={onNeedPeople}
@@ -46,14 +46,12 @@ export function Stages({ onNeedPeople, readOnly }: { onNeedPeople: () => void; r
 
 function StageCard({
   stage,
-  index,
   occupancy,
   nextId,
   onNeedPeople,
   readOnly,
 }: {
   stage: Stage
-  index: number
   occupancy: Occupancy | null
   nextId?: EntertainerId
   onNeedPeople: () => void
@@ -67,13 +65,20 @@ function StageCard({
   const nextName = useName(nextId ?? '')
   const [picker, setPicker] = useState<'send' | 'swap' | null>(null)
 
-  const isFeature = index === 0
-  const isEntry = index === stages.length - 1
-  const above = index > 0 ? stages[index - 1] : null
+  const live = stages.filter((s) => s.enabled !== false)
+  const liveIndex = live.findIndex((s) => s.id === stage.id)
+  const enabled = stage.enabled !== false
+  const isFeature = enabled && liveIndex === 0
+  const isEntry = enabled && liveIndex === live.length - 1
+  const above = liveIndex > 0 ? live[liveIndex - 1] : null
   const aboveBusy = !!(above && allOcc[above.id])
-  const remaining = occupancy ? setLengthMs - (tick - occupancy.since) : 0
+  const paused = occupancy?.pausedAt != null
+  const elapsed = occupancy
+    ? (occupancy.pausedAt ?? tick) - occupancy.since
+    : 0
+  const remaining = occupancy ? setLengthMs - elapsed : 0
   const expired = occupancy ? remaining <= 0 : false
-  const waiting = !!(occupancy && aboveBusy)
+  const waiting = !!(occupancy && aboveBusy && !paused)
 
   const available = clockedIn
     .filter((id) => statuses[id]?.kind === 'available')
@@ -94,20 +99,52 @@ function StageCard({
       : 'Move up'
 
   return (
-    <article className={`stage-card ${occupancy ? 'is-live' : 'is-open'}`}>
+    <article
+      className={`stage-card ${
+        !enabled ? 'is-off' : occupancy ? 'is-live' : 'is-open'
+      }`}
+    >
       <header className="stage-card-head">
         <h2>{stage.name}</h2>
-        <span className="stage-role">
-          {isEntry ? 'Start' : isFeature ? 'Feature' : 'Next up'}
-        </span>
+        <div className="stage-card-head-right">
+          {enabled && (
+            <span className="stage-role">
+              {isEntry ? 'Start' : isFeature ? 'Feature' : 'Next up'}
+            </span>
+          )}
+          {!readOnly && (
+            <button
+              className={`stage-toggle ${enabled ? 'is-on' : 'is-off'}`}
+              disabled={enabled && live.length <= 1}
+              onClick={() => dispatch({ type: 'toggle-stage', id: stage.id })}
+            >
+              {enabled ? 'On' : 'Off'}
+            </button>
+          )}
+        </div>
       </header>
 
-      {occupancy ? (
+      {!enabled ? (
+        <div className="stage-status">
+          <div className="open-stamp open-stamp--off">OFF</div>
+        </div>
+      ) : occupancy ? (
         <div className="stage-status">
           <div className="stage-name">{performer}</div>
-          <div className={`stage-timer ${expired || waiting ? 'is-up' : ''}`}>
-            {waiting ? 'WAIT' : formatRemaining(remaining)}
+          <div className="stage-timer-row">
+            <div className={`stage-timer ${expired || waiting || paused ? 'is-up' : ''}`}>
+              {waiting ? 'WAIT' : formatRemaining(remaining)}
+            </div>
+            {!readOnly && (
+              <button
+                className={`btn btn-sm ${paused ? 'btn-gold' : 'btn-ghost'}`}
+                onClick={() => dispatch({ type: 'toggle-pause', stageId: stage.id })}
+              >
+                {paused ? 'Resume' : 'Pause'}
+              </button>
+            )}
           </div>
+          {paused && <div className="pause-tag">Paused</div>}
         </div>
       ) : (
         <div className="stage-status">
@@ -115,7 +152,7 @@ function StageCard({
         </div>
       )}
 
-      {!readOnly && <footer className="stage-actions">
+      {!readOnly && enabled && <footer className="stage-actions">
         {occupancy ? (
           <>
             <button
@@ -149,7 +186,7 @@ function StageCard({
             ) : (
               <button
                 className="btn btn-ghost"
-                disabled={!hasNext || !!(allOcc[stages[stages.length - 1].id])}
+                disabled={!hasNext || !!(allOcc[live[live.length - 1]?.id])}
                 onClick={() => dispatch({ type: 'send-next' })}
               >
                 {hasNext ? `Onto start` : 'Send next'}

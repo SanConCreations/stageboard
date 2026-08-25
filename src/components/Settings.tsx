@@ -81,6 +81,10 @@ export function Settings({ onClose }: { onClose: () => void }) {
 
         <section className="sheet-section">
           <h3>Stages</h3>
+          <p className="hint">
+            Turn a stage Off if you are only running two tonight. Rotation
+            skips it. At least one stage stays on.
+          </p>
           <ul className="pick-list">
             {stages.map((s) => (
               <li key={s.id}>
@@ -94,13 +98,22 @@ export function Settings({ onClose }: { onClose: () => void }) {
                     {s.name}
                     {s.autoRotate && <em className="queue-tag">auto</em>}
                   </button>
-                  <button
-                    className="btn btn-ghost btn-sm"
-                    disabled={stages.length <= 1}
-                    onClick={() => dispatch({ type: 'remove-stage', id: s.id })}
-                  >
-                    Remove
-                  </button>
+                  <div className="row-btns">
+                    <button
+                      className={`btn btn-sm ${s.enabled !== false ? 'btn-gold' : 'btn-ghost'}`}
+                      disabled={s.enabled !== false && stages.filter((x) => x.enabled !== false).length <= 1}
+                      onClick={() => dispatch({ type: 'toggle-stage', id: s.id })}
+                    >
+                      {s.enabled !== false ? 'On' : 'Off'}
+                    </button>
+                    <button
+                      className="btn btn-ghost btn-sm"
+                      disabled={stages.length <= 1}
+                      onClick={() => dispatch({ type: 'remove-stage', id: s.id })}
+                    >
+                      Remove
+                    </button>
+                  </div>
                 </div>
               </li>
             ))}
